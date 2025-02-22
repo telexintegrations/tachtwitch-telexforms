@@ -44,34 +44,34 @@ const rejectNonPostRequests = (req, res, next) => {
 app.use(rejectNonPostRequests);
 
 //webhook
-app.post("/webhook",async (req,res) => {
-        const {message, settings} = req.body
+app.post("/webhook", async (req, res) => {
+  try {
+    const { message, settings } = req.body;
 
-        if(!message || !settings){
-            return res.status(400).send({ error: "Invalid request" });
-            
-        }
-    try{
-        const maxWords = settings.find=((setting) => {
-            setting.label = "maxMessageLength"
-        });
-    
-        if(maxWords?.default < message.length){
-          return res.json({status:"error",message:`message length exceeded ${maxWords?.default}`})
-        }
-          if (typeof message != "object" && !Array.isArray(jsonData)) {
-          
-          return res.json({status:"success",message:`TelexForms Custom Form \n${jsonToText(message)}`})
-          }
-          
-          return res.json({status:"success",message:message})
-        
-    } catch (error) {
-        console.log(error)
-        res.status(500)
+    // Validate request body
+    if (!message || !settings) {
+      return res.status(400).send({ error: "Invalid request" });
     }
-    
-})
+
+    // Find max message length setting
+    const maxWordsSetting = settings.find((setting) => setting.label === "maxMessageLength");
+
+    // Check message length
+    if (maxWordsSetting?.default < message.length) {
+      return res.json({ status: "error", message: `Message length exceeded ${maxWordsSetting?.default}` });
+    }
+
+    // Process message
+    if (typeof message === "object") {
+      return res.json({ status: "success", message: `TelexForms Custom Form \n${jsonToText(message)}` });
+    } else {
+      return res.json({ status: "success", message: message });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: "Internal Server Error" });
+  }
+});
 
 // Submit form
 app.post("/submit-form", upload.none(), async (req, res) => {
